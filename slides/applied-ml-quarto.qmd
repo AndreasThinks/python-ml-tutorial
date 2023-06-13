@@ -1,0 +1,274 @@
+## Linear Models - Regression
+---
+title: "Applied Machine Learning (with Python)"
+format:
+  revealjs:
+    incremental: true  
+    logo: assets/logo.png
+    slide-number: true
+---
+
+## What are we going to learn?
+
+- Exploring a real data science problem
+- Understanding how ML can and can't add value
+- Deploying and evaluating various approaches
+- Think about what might come next
+
+## Today...
+
+::: {.incremental}
+1. Finding and exploring a dataset
+2. Making our first predictions
+3. How did we do?
+4. Applying machine Learning
+6. Where do we go from here?
+:::
+
+## Data Science and AI, wot?
+
+:::: {.columns}
+
+::: {.column width="60%"}
+![](assets/Data_Science_VD.png)
+:::
+
+::: {.column width="40%"}
+::: {.incremental}
+- ![](assets/statsmodels-logo-v2-horizontal.svg)
+- ![](assets/scikit-learn.png)
+- ![](assets/pytorch.jpg)
+:::
+:::
+
+::::
+
+## Finding our data
+
+[The Kaggle Titanic Dataset](https://www.kaggle.com/competitions/titanic){preview-link="true"}
+
+... now we can begin exploring!
+
+# Practical 1 - Understanding our data
+
+::: {.notes}
+Open notebook and look through until exploration
+:::
+
+
+## The Unreasonable Effectiveness of Linear Regression
+```{python}
+
+import plotly.express as px
+
+df = px.data.tips()
+fig = px.scatter(df, x="total_bill", y="tip", trendline="ols")
+fig.show()
+```
+
+## But we're not restricted to one factor!
+
+```{python}
+df = px.data.tips()
+fig = px.scatter(df, x="total_bill", y="tip", color="sex", trendline="ols")
+fig.show()
+```
+
+---
+```{python}
+#| echo: true
+
+results = px.get_trendline_results(fig)
+print(results.px_fit_results.iloc[0].summary())
+
+```
+
+## What are we doing?
+- Really, we're just fitting a line
+
+- $y_i = \beta_0 + \kappa T_i + \beta_1 X_{1i} + ... +\beta_k X_{ki} + u_i$
+
+- But that line can get super, super squiggly
+- Machine learning is just using compute to make the best *multidimensional* squiggle
+
+# From Stats to ML
+## Testing and Validating
+- Traditional statistics often predicted "in sample"
+- Instead, we use test data [(WHICH IS WAY EASIER)](https://www.albert.io/blog/ultimate-properties-of-ols-estimators-guide/){preview-link="true"}
+- So think really hard about:
+    - whether your test set is meaningful
+    - what baseline performance is
+
+
+## Metrics that matter 
+::: {.r-stack}
+![](assets/accuracy_recall.png){.fragment}
+
+![](assets/metrics.png){.fragment}
+
+:::
+
+# Metrics Practical
+
+## Linear Models Recap
+- Linear models are generally excellent places to start
+- Use them to think about your data: how it's built, how it's connected, and what you're aiming to achieve
+- With a bit of work, [these can perform shockingly well](https://www.youtube.com/watch?v=68ABAU_V8qI){preview-link="true"}
+- but now it's time to go deeper
+
+# Into the forest of ML
+
+## Scikit-learn: your big ML toolbox
+- sklearn has LOADS of traditional ML approaches. 
+- [Get comfy with their documentation](https://scikit-learn.org/stable/user_guide.html){preview-link="true"}
+
+## The sklearn paradigm
+
+```{.python code-line-numbers="|7,8,9"}
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+
+X, y = load_iris(return_X_y=True)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
+gnb = GaussianNB()
+gnb.fit(X_train, y_train)
+y_pred = gnb..predict(X_test)
+```
+
+## Which Model for Which Problem (and why it's always XGBoost)
+
+## Gradient Descent - When Lines get real squiggly
+```{python}
+#| echo: false
+#| output-location: slide
+
+from ipywidgets import interact
+from fastai.basics import *
+
+
+def plot_function(f, title=None, min=-2.1, max=2.1, color='r', ylim=None):
+    x = torch.linspace(min,max, 100)[:,None]
+    if ylim: plt.ylim(ylim)
+    plt.plot(x, f(x), color)
+    if title is not None: plt.title(title)
+
+def f(x): return 3*x**2 + 2*x + 1
+
+plot_function(f, "$3x^2 + 2x + 1$")
+
+```
+
+## So how do we fit the super squiggly line?
+
+```{python}
+#| echo: false
+#| output-location: slide
+
+def quad(a, b, c, x): return a*x**2 + b*x + c
+def mk_quad(a,b,c): return partial(quad, a,b,c)
+
+def noise(x, scale): return np.random.normal(scale=scale, size=x.shape)
+def add_noise(x, mult, add): return x * (1+noise(x,mult)) + noise(x,add)
+def mae(preds, acts): return (torch.abs(preds-acts)).mean()
+
+np.random.seed(42)
+
+x = torch.linspace(-2, 2, steps=20)[:,None]
+y = add_noise(f(x), 0.15, 1.5)
+
+plt.scatter(x,y);
+```
+
+
+---
+
+```{python}
+#| echo: false
+#| output-location: slide
+
+from ipywidgets import interactive, VBox
+import matplotlib.pyplot as plt
+
+# Assuming that mk_quad, plot_function, mae, f(x), x, and y are all defined elsewhere...
+
+def plot_quad(a, b, c):
+    f = mk_quad(a, b, c)
+    plt.scatter(x, y)
+    loss = mae(f(x), y)
+    fig = plot_function(f, ylim=(-3,12), title=f"MAE: {loss:.2f}")
+    fig
+
+a_slider = interactive(plot_quad, a=(0, 2, 0.1), b=(0, 2, 0.1), c=(0, 2, 0.1))
+vb = VBox([a_slider])
+vb
+
+```
+
+## Gradient, Loss and Boosting
+
+- Neural networks approaches rely on *gradient descent* to maximise how well they fit
+- Gradient boosters rely on combining (or boosting models)
+- Combining your forecasts can be hugely effective
+
+# Tous Ensemble!
+## Combining Models
+
+- Boosting is only one approach
+- Just like Random Forests, the best models are often combinations
+- Lets implement it!
+
+## Risks and Benefits to Ensemble
+
+- Has your model performed better?
+- What is the implication for fit and variance?
+
+# Optional Materials
+
+## Class Imbalance
+- How imbalanced is our model?
+- what impact do you think this has in reality?
+- There are a range of approaches:
+    - Weighted Errors
+    - Bespoke algorithms (SMOTE etc)
+
+# Where do we go from here?
+
+## Text and NLP 
+- We haven't used the name category at all
+- How would you extract value from it?
+
+---
+
+![](assets/tree4.jpeg)
+
+## Image Recognition
+- Thinking beyond tabular data, how could what you've learnt be applied to images?
+
+---
+
+![](assets/mnist-1.png){.fragment}
+
+---
+
+![](assets/mnist-2.png){.fragment}
+
+# Helpful Resources
+- [Causal Inference for the Brave and True](https://matheusfacure.github.io/python-causality-handbook/landing-page.html){preview-link="true"}
+- [Python Data Science Handbook](https://jakevdp.github.io/PythonDataScienceHandbook/){preview-link="true"}
+- [Fast.AI Practical Deep Learning](https://course.fast.ai/){preview-link="true"}
+
+# Come to our hackathons!
+![](assets/A2-Evidence-House-Logo-1-1.png)
+
+# Thanks!
+::: {.nonincremental}
+
+- avarotsis@no10.gov.uk
+- Andreas Varotsis_10DS @ GovDataScience Slack
+
+- andreasthinks@twitter.com
+- andreasthinks@fosstodon.org
+- Andreas Varotsis @ Kaggle
+:::
+

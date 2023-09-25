@@ -8,11 +8,9 @@ This notebook is available on Kaggle, as both:
 
 ## Installation
 
-### Use vscode on github (codespace)
+### Start with Binder
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/AndreasThinks/python-ml-tutorial/tree/main?quickstart=1)
-
-Once this is open, explore each notebook.
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/AndreasThinks/python-ml-tutorial/HEAD?labpath=notebooks%2F1-tutorial.ipynb)
 
 ## Credits
 
